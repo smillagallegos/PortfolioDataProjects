@@ -1,0 +1,103 @@
+import requests 
+import pandas as pd 
+from datetime import datetime, timedelta
+import os
+import subprocess
+import time
+
+def download_raw_csv(url: str, folder: str) -> str:
+    """
+    Downloads the CFIA raw CSV file from the given URL and saves it to the specified folder.
+
+    Args:
+        url (str): The URL to download the CSV from.
+        folder (str): The local folder to save the downloaded file.
+
+    Returns:
+        str: Path to the saved raw CSV file.
+    """
+    # Create filename based on yesterday's date (since the file is updated at 2:00 AM for today's date)
+    yesterday = datetime.now() - timedelta(days=1)
+    yesterday_date_str = yesterday.strftime("%Y_%m_%d")
+    file_name = f"cfia_recalls_raw_{yesterday_date_str}.csv"
+    file_path = os.path.join(folder, file_name)
+
+    # Make sure the folder exists
+    os.makedirs(folder, exist_ok=True)
+
+    print("Downloading data...")
+    
+    max_retries = 5
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            # Send HTTP GET request to download CSV
+            response = requests.get(url, stream=True, timeout=200) 
+            if response.status_code == 200: 
+                with open(file_path, "wb") as f:
+                    # Extract in in chunks since it is a big file
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                print(f"Raw data saved as: {file_path}")
+                return file_path
+            else: 
+                raise Exception(f"Failed to download CSV. Status code: {response.status_code}")
+        except requests.exceptions.ChunkedEncodingError as e:
+            print(f"Attempt {attempt}: ChunkedEncodingError. Retrying in 5 seconds...")
+            time.sleep(5)
+    raise Exception("Failed to download after multiple attempts.")
+
+def filter_food_recalls(input_path: str, output_path: str) -> int:
+    """
+    Filters the raw CSV file for food-related recalls and saves it to a new file.
+
+    Args:
+        input_path (str): Path to the raw CSV file.
+        output_path (str): Path to save the filtered CSV file.
+
+    Returns:
+        int: Number of food recall records found.
+    """
+    print("\nFiltering food recalls...")
+
+    # Load the raw data into a DataFrame
+    df = pd.read_csv(input_path) 
+
+    # Check if 'Issue' column exists and filter for key food safety issues
+    if 'Issue' in df.columns: 
+        filtered_df = df[
+                            df['Issue'].str.contains("Salmonella|Listeria|E. Coli", na=False) &
+                            ~df['Issue'].str.contains("Listeria - Medical devices", case=False, na=False)
+                        ] 
+
+        # Save filtered records to a new CSV
+        filtered_df.to_csv(output_path, index=False)
+
+        print(f"Filtered food recalls saved as: {output_path}") 
+        print(f"\nFound {len(filtered_df)} food recalls.")
+    else:
+        # Raise error if expected column is missing
+        raise ValueError("'Issue' column not found in dataset.")
+
+def main():
+    """
+    Main function to run the download and filtering steps for CFIA recall data.
+    """
+    # CFIA open data source for recalls
+    url = "https://recalls-rappels.canada.ca/sites/default/files/opendata-donneesouvertes/HCRSAMOpenData.csv"
+
+    # Target folder and dynamic filenames
+    folder = "recalls"
+    yesterday = datetime.now() - timedelta(days=1)
+    yesterday_date_str = yesterday.strftime("%Y_%m_%d")
+    filtered_path = os.path.join(folder, f"cfia_food_recalls_{yesterday_date_str}.csv")
+
+    downloaded_file = download_raw_csv(url, folder)
+
+    # Step 2: Filter for relevant food recall records
+    filter_food_recalls(downloaded_file, filtered_path)
+
+# Only run if script is executed directly (not imported)
+if __name__ == "__main__":
+    main()

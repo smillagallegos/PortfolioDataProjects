@@ -1,0 +1,26 @@
+[project]
+name = "cfia-food-recalls-project"
+version = "0.1.0"
+description = "Data Analysis of food recalls in Canada since 2011"
+authors = [
+    {name = "Salma Milla"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "selenium (>=4.28.1,<5.0.0)",
+    "webdriver-manager (>=4.0.2,<5.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "pyodbc (>=5.2.0,<6.0.0)",
+    "sqlalchemy (>=2.0.41,<3.0.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
