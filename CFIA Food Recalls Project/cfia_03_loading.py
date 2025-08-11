@@ -3,14 +3,24 @@ from pathlib import Path
 from cfia_02_transforming import get_yesterday_filename
 import sqlalchemy 
 from sqlalchemy import text
+from dotenv import load_dotenv
 import sys
+import os
+
+# Load variables from .env file
+load_dotenv()
 
 def get_sqlalchemy_engine():
     """
     Create and return a SQLAlchemy engine with fast_executemany enabled for SQL Server.
     """
-    server = '<YOUR_SERVER_NAME>'
-    database = '<YOUR_DATABASE_NAME>'
+
+    server = os.getenv("CFIA_SQL_SERVER")
+    database = os.getenv("CFIA_SQL_DATABASE")
+
+    if not server or not database:
+        raise ValueError("Environment variables CFIA_SQL_SERVER and CFIA_SQL_DATABASE must be set in the .env file.")
+
     driver = 'ODBC Driver 17 for SQL Server'
     conn_str = (
         f"mssql+pyodbc://@{server}/{database}"
