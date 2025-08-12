@@ -1,6 +1,5 @@
 import requests 
 import pandas as pd 
-from datetime import datetime, timedelta
 import os
 import subprocess
 import time
@@ -16,10 +15,8 @@ def download_raw_csv(url: str, folder: str) -> str:
     Returns:
         str: Path to the saved raw CSV file.
     """
-    # Create filename based on yesterday's date (since the file is updated at 2:00 AM for today's date)
-    yesterday = datetime.now() - timedelta(days=1)
-    yesterday_date_str = yesterday.strftime("%Y_%m_%d")
-    file_name = f"cfia_recalls_raw_{yesterday_date_str}.csv"
+    # Save raw file
+    file_name = "cfia_recalls_raw.csv"
     file_path = os.path.join(folder, file_name)
 
     # Make sure the folder exists
@@ -89,9 +86,7 @@ def main():
 
     # Target folder and dynamic filenames
     folder = "recalls"
-    yesterday = datetime.now() - timedelta(days=1)
-    yesterday_date_str = yesterday.strftime("%Y_%m_%d")
-    filtered_path = os.path.join(folder, f"cfia_food_recalls_{yesterday_date_str}.csv")
+    filtered_path = os.path.join(folder, "cfia_food_recalls.csv")
 
     downloaded_file = download_raw_csv(url, folder)
 

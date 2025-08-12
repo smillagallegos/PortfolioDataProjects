@@ -1,6 +1,5 @@
 import pandas as pd
 from pathlib import Path
-from cfia_02_transforming import get_yesterday_filename
 import sqlalchemy 
 from sqlalchemy import text
 from dotenv import load_dotenv
@@ -62,7 +61,7 @@ def main():
         sys.exit(1)
 
     # Call function to get yesterday's file name
-    filename = get_yesterday_filename("processed_cfia_food_recalls_", suffix=".csv")
+    filename = "processed_cfia_food_recalls.csv"
     processed_file_path = dir_path / filename
     
     # Read the CSV file into a DataFrame

@@ -1,26 +1,9 @@
 import pandas as pd
 from pathlib import Path
-from datetime import datetime, timedelta
 import subprocess
 import traceback
 import numpy as np
 import re
-
-def get_yesterday_filename(prefix="cfia_food_recalls_", suffix=".csv") -> str:
-    """
-        Generate yesterday's filename (since the file is updated at 2:00 AM for today's date) using the standard naming convention.
-
-        Args:
-            prefix (str): The filename prefix (default is 'cfia_food_recalls_').
-            suffix (str): The filename extension (default is '.csv').
-        
-        Returns:
-            str: The generated filename in the format 'prefixYYYY_MM_DD.csv'.
-    """
-    # Get yesterday's date string
-    yesterday = datetime.now() - timedelta(days=1)
-    yesterday_date_str = yesterday.strftime("%Y_%m_%d")
-    return f"{prefix}{yesterday_date_str}{suffix}"
 
 def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
     """
@@ -205,18 +188,14 @@ def main():
     # Convert string into Path object
     dir_path = Path("recalls")
 
-    # Get yesterday's date string
-    yesterday = datetime.now() - timedelta(days=1)
-    yesterday_date_str = yesterday.strftime("%Y_%m_%d")
-
     try:
         # Check if the directory exists
         if not dir_path.exists() or not dir_path.is_dir():
             print(f"Directory {dir_path.name} does not exist.")
             return
 
-        # Call function to get yesterday's file name
-        filename = get_yesterday_filename()
+        # Get full path to read the file
+        filename = "cfia_food_recalls.csv"
         recalls_file_path = dir_path / filename
         processed_file_path = dir_path / f"processed_{filename}"
 

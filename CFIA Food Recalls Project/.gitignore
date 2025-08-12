@@ -10,3 +10,6 @@ recalls/
 
 # Env variables file
 .env
+
+# Website folder
+portfoliowebsite/
