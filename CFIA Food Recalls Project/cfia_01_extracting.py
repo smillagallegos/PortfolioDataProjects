@@ -30,20 +30,20 @@ def download_raw_csv(url: str, folder: str) -> str:
         try:
             # Send HTTP GET request to download CSV
             response = requests.get(url, stream=True, timeout=200) 
-            if response.status_code == 200: 
-                with open(file_path, "wb") as f:
-                    # Extract in in chunks since it is a big file
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                print(f"Raw data saved as: {file_path}")
-                return file_path
-            else: 
-                raise Exception(f"Failed to download CSV. Status code: {response.status_code}")
-        except requests.exceptions.ChunkedEncodingError as e:
-            print(f"Attempt {attempt}: ChunkedEncodingError. Retrying in 5 seconds...")
-            time.sleep(5)
-    raise Exception("Failed to download after multiple attempts.")
+            response.raise_for_status() # Raises for non-200 status codes
+            with open(file_path, "wb") as f:
+                # Extract in in chunks since it is a big file
+                chunk_size = int(os.getenv("CFIA_CHUNK_SIZE", 8192))
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        f.write(chunk)
+            print(f"Raw data saved as: {file_path}")
+            return file_path
+        except (ChunkedEncodingError, Timeout, ConnectionError) as e:
+            print(f"Attempt {attempt}: {type(e).__name__} - {e}. Retrying in 5 seconds...")
+            time.sleep(5 * attempt)
+        except requests.HTTPError as e:
+            raise Exception(f"HTTP error {response.status_code} while downloading file: {e}")
 
 def filter_food_recalls(input_path: str, output_path: str) -> int:
     """
@@ -90,9 +90,12 @@ def main():
 
     downloaded_file = download_raw_csv(url, folder)
 
-    # Step 2: Filter for relevant food recall records
+    # Filter for relevant food recall records
     filter_food_recalls(downloaded_file, filtered_path)
 
-# Only run if script is executed directly (not imported)
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"Pipeline failed: {e}", file=sys.stderr)
+        sys.exit(1)  # Forces non-zero exit code so GitHub Actions fails
