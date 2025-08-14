@@ -5,9 +5,6 @@
 __pycache__/
 *.pyc
 
-# Data folder (CSV files, raw data, etc.)
-recalls/
-
 # Env variables file
 .env
 
