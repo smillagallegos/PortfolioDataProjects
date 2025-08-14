@@ -14,17 +14,20 @@ def get_sqlalchemy_engine():
     Create and return a SQLAlchemy engine with fast_executemany enabled for SQL Server.
     """
 
-    server = os.getenv("CFIA_SQL_SERVER")
-    database = os.getenv("CFIA_SQL_DATABASE")
+    server = os.getenv("CFIA_SQL_SERVER")       
+    database = os.getenv("CFIA_SQL_DATABASE")   
+    username = os.getenv("CFIA_SQL_USER")       
+    password = os.getenv("CFIA_SQL_PASSWORD")   
 
-    if not server or not database:
-        raise ValueError("Environment variables CFIA_SQL_SERVER and CFIA_SQL_DATABASE must be set in the .env file.")
+    if not all([server, database, username, password]):
+        raise ValueError("All required DB environment variables must be set.")
 
-    driver = 'ODBC Driver 17 for SQL Server'
+    driver = "ODBC Driver 18 for SQL Server"
     conn_str = (
-        f"mssql+pyodbc://@{server}/{database}"
-        "?driver=ODBC+Driver+17+for+SQL+Server"
-        "&trusted_connection=yes"
+        f"mssql+pyodbc://{username}:{password}@{server}/{database}"
+        f"?driver={driver.replace(' ', '+')}"
+        "&Encrypt=yes"
+        "&TrustServerCertificate=no"
     )
     engine = sqlalchemy.create_engine(conn_str, fast_executemany=True)
     return engine
