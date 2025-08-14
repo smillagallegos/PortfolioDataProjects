@@ -90,9 +90,12 @@ def main():
 
     downloaded_file = download_raw_csv(url, folder)
 
-    # Step 2: Filter for relevant food recall records
+    # Filter for relevant food recall records
     filter_food_recalls(downloaded_file, filtered_path)
 
-# Only run if script is executed directly (not imported)
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"Pipeline failed: {e}", file=sys.stderr)
+        sys.exit(1)  # Forces non-zero exit code so GitHub Actions fails
