@@ -43,7 +43,13 @@ jobs:
             --name gh-${GITHUB_RUN_ID} \
             --start-ip-address $RUNNER_IP \
             --end-ip-address $RUNNER_IP
-            
+      
+      - name: Wait for firewall to propagate
+        run: sleep 10
+
+      - name: List firewall rules (debug)
+        run: az sql server firewall-rule list --resource-group $AZURE_RG --server $AZURE_SQL_SERVER --output table
+        
       # Step 3: Install SQL Server ODBC driver
       - name: Install SQL Server ODBC driver
         run: |
