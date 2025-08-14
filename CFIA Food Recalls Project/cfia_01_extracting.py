@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import subprocess
 import time
+import sys
 
 def download_raw_csv(url: str, folder: str) -> str:
     """
