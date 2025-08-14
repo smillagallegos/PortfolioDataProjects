@@ -43,16 +43,25 @@ jobs:
             --name gh-${GITHUB_RUN_ID} \
             --start-ip-address $RUNNER_IP \
             --end-ip-address $RUNNER_IP
+            
       # Step 3: Install SQL Server ODBC driver
       - name: Install SQL Server ODBC driver
         run: |
-          sudo apt-get update
-          sudo apt-get install -y apt-transport-https ca-certificates gnupg
-          . /etc/os-release
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/msprod.gpg
-          echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/msprod.gpg] https://packages.microsoft.com/ubuntu/${VERSION_ID}/prod ${UBUNTU_CODENAME} main" | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          # Remove any existing Microsoft repo/key to avoid conflicts
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo rm -f /usr/share/keyrings/microsoft-prod.gpg
+
+          # Download and install the Microsoft repo package
+          curl https://packages.microsoft.com/keys/microsoft.asc | \
+            gpg --dearmor | sudo tee /usr/share/keyrings/microsoft-prod.gpg > /dev/null
+
+          echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/ubuntu/$(lsb_release -rs)/prod $(lsb_release -cs) main" | \
+            sudo tee /etc/apt/sources.list.d/microsoft-prod.list
+
+          # Update apt and install the ODBC driver
           sudo apt-get update
           sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev
+          
       # Step 4: Install Poetry and dependencies
       - name: Install Poetry
         run: pip install "poetry>=1.8,<2.0"
@@ -83,5 +92,4 @@ jobs:
           az sql server firewall-rule delete \
             --resource-group $AZURE_RG \
             --server $AZURE_SQL_SERVER \
-            --name gh-${GITHUB_RUN_ID} \
-            --yes
+            --name gh-${GITHUB_RUN_ID} 
