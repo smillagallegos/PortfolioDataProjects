@@ -4,6 +4,7 @@ import os
 import subprocess
 import time
 import sys
+from requests.exceptions import ChunkedEncodingError, Timeout, ConnectionError
 
 def download_raw_csv(url: str, folder: str) -> str:
     """
