@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 env:
-  AZURE_RG: PortfolioProjects
-  AZURE_SQL_SERVER: smillags
+  AZURE_RG: ${{ secrets.AZURE_RG }}
+  AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
 
 jobs:
   run-pipeline:
@@ -84,20 +84,13 @@ jobs:
         run: poetry run python cfia_run_pipeline.py
         continue-on-error: false
 
-      # Step 6: Commit the updated CSV back to repo
-      - name: Commit updated CSV
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: refresh CFIA recalls data via CI"
-          file_pattern: "CFIA Food Recalls Project/recalls/processed_cfia_food_recalls.csv"
-
-      # Step 7: Check if the processed file was updated
+      # Step 5: Check if the processed file was updated
       - name: Show first lines of processed file (debug)
         run: |
           echo "Dumping head of processed file:"
-          head -n 3 "CFIA Food Recalls Project/recalls/processed_cfia_food_recalls.csv"
+          head -n 3 "recalls/processed_cfia_food_recalls.csv"
 
-      # Step 8: Close firewall rule
+      # Step 6: Close firewall rule
       - name: Close firewall
         if: always()
         run: |
