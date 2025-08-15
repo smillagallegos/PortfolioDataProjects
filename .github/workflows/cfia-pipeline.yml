@@ -3,7 +3,7 @@ name: CFIA Pipeline
 on:
   workflow_dispatch:        # Allow manual runs
   schedule:
-    - cron: "0 13 * * *"    # Run daily at 13:00 UTC
+    - cron: "0 18 * * *"    # Run daily at 17:00 UTC
 
 permissions:
   id-token: write            # Required for OIDC login
@@ -76,6 +76,9 @@ jobs:
         run: poetry install --no-interaction --no-root
 
       # Step 5: Run the ETL pipeline
+      - name: Change to project directory
+        run: cd "CFIA Food Recalls Project"
+        
       - name: Run pipeline
         env:
           CFIA_SQL_SERVER:   ${{ secrets.CFIA_SQL_SERVER }}
