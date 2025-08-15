@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: "CFIA Food Recalls Project"
+        working-directory: "./CFIA Food Recalls Project"
 
     steps:
       - name: Checkout code
@@ -74,10 +74,6 @@ jobs:
 
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
-
-      # Step 5: Run the ETL pipeline
-      - name: Change to project directory
-        run: cd "CFIA Food Recalls Project"
         
       - name: Run pipeline
         env:
