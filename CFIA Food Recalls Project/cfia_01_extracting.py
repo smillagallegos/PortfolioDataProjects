@@ -42,8 +42,9 @@ def download_raw_csv(url: str, folder: str) -> str:
             print(f"Raw data saved as: {file_path}")
             return file_path
         except (ChunkedEncodingError, Timeout, ConnectionError) as e:
-            print(f"Attempt {attempt}: {type(e).__name__} - {e}. Retrying in 5 seconds...")
-            time.sleep(5 * attempt)
+            delay = 5 * attempt
+            print(f"Attempt {attempt}: {type(e).__name__} - {e}. Retrying in {delay} seconds...")
+            time.sleep(delay)
         except requests.HTTPError as e:
             raise Exception(f"HTTP error {response.status_code} while downloading file: {e}")
 
@@ -68,7 +69,7 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
         filtered_df = df[
                             df['Issue'].str.contains("Salmonella|Listeria|E. Coli", na=False) &
                             ~df['Issue'].str.contains("Listeria - Medical devices", case=False, na=False)
-                        ] 
+                        ]
 
         # Save filtered records to a new CSV
         filtered_df.to_csv(output_path, index=False)

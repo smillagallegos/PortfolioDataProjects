@@ -4,6 +4,8 @@ import subprocess
 import traceback
 import numpy as np
 import re
+from datetime import datetime
+import pytz
 
 def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
     """
@@ -167,7 +169,8 @@ def save_processed_data (processed_file_path: Path, df_recalls_processed: pd.Dat
     Save the processed recall data to a CSV file.
 
     This function takes a DataFrame containing processed recall data and saves it 
-    to a specified file path. The file is saved without including the index.
+    to a specified file path including a timestamp comment in the first line to keep track of the last time it was updated.
+    The file is saved without including the index.
 
     Args:
         processed_file_path (Path): The full path where the processed data should be saved.
@@ -176,8 +179,15 @@ def save_processed_data (processed_file_path: Path, df_recalls_processed: pd.Dat
     Returns:
         None: This function saves the file to the disk and prints a success message.
     """
-    # Save updated data to a new CSV
-    df_recalls_processed.to_csv(processed_file_path, index=False)
+
+    # Generate ET timestamp
+    eastern = pytz.timezone("America/Toronto")
+    timestamp_et = datetime.now(eastern).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+    # Open the file and write comment + updated data
+    with open(processed_file_path, "w", encoding="utf-8") as f:
+        f.write(f"# Last updated (ET): {timestamp_et}\n")
+        df_recalls_processed.to_csv(f, index=False, encoding="utf-8")
 
     print(f"\nData successfully saved to {processed_file_path.name}")
 

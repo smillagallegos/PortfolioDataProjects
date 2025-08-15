@@ -67,8 +67,8 @@ def main():
     filename = "processed_cfia_food_recalls.csv"
     processed_file_path = dir_path / filename
     
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(processed_file_path)
+    # Read the CSV file into a DataFrame and ignore timestamp comment
+    df = pd.read_csv(processed_file_path, comment="#")
 
     # Connect with SQLAlchemy engine
     engine = get_sqlalchemy_engine()
