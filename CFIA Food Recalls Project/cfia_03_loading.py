@@ -32,15 +32,15 @@ def get_sqlalchemy_engine():
     engine = sqlalchemy.create_engine(conn_str, fast_executemany=True)
     return engine
 
+
 def fetch_existing_ids(engine):
     """
     Fetch all existing NIDs from the FoodRecalls table using SQLAlchemy.
     """
     with engine.connect() as conn:
         result = conn.execute(text("SELECT NID FROM dbo.FoodRecalls"))
-        existing_ids = {row[0] for row in result}
-    return existing_ids
-
+        return {row[0] for row in result}
+    
 def main():
     """
         Main function to execute the data insertion pipeline.
@@ -73,43 +73,50 @@ def main():
     # Connect with SQLAlchemy engine
     engine = get_sqlalchemy_engine()
 
-    # Fetch existing IDs to avoid duplicates
-    existing_ids = fetch_existing_ids(engine)
-    print(f"Found {len(existing_ids)} existing IDs in the database.")
+    try:
+        # Fetch existing IDs to avoid duplicates
+        existing_ids = fetch_existing_ids(engine)
+        print(f"Found {len(existing_ids)} existing IDs in the database.")
 
-    # Filter out records that already exist
-    df_new = df[~df['NID'].isin(existing_ids)]
+        # Filter out records that already exist
+        df_new = df[~df['NID'].isin(existing_ids)]
 
-    if not df_new.empty:
-        # Prepare DataFrame for SQL (rename columns if needed)
-        column_mapping = {
-            "NID": "NID",
-            "Title": "Title",
-            "URL": "URL",
-            "Product": "Product",
-            "Issue": "Issue",
-            "Main issue": "MainIssue",
-            "Secondary issue": "SecondaryIssue",
-            "Bacteria subtype": "BacteriaSubtype",
-            "Category": "Category",
-            "Recall class": "Class",
-            "Last updated": "LastUpdated",
-            "Archived": "IsArchived"
-        }
-        # Only use columns present in both DataFrame and mapping
-        columns_to_use = [col for col in column_mapping.keys() if col in df_new.columns]
-        df_to_insert = df_new[columns_to_use].rename(columns=column_mapping)
-        # Insert
-        df_to_insert.to_sql(
-            "FoodRecalls",
-            con=engine,
-            if_exists="append",
-            index=False,
-            method=None  
-        )
-        print(f"{len(df_to_insert)} records inserted successfully.")
-    else:
-        print("No new records to insert.")
+        if not df_new.empty:
+            # Prepare DataFrame for SQL (rename columns if needed)
+            column_mapping = {
+                "NID": "NID",
+                "Title": "Title",
+                "URL": "URL",
+                "Product": "Product",
+                "Issue": "Issue",
+                "Main issue": "MainIssue",
+                "Secondary issue": "SecondaryIssue",
+                "Bacteria subtype": "BacteriaSubtype",
+                "Category": "Category",
+                "Recall class": "Class",
+                "Last updated": "LastUpdated",
+                "Archived": "IsArchived"
+            }
+            # Only use columns present in both DataFrame and mapping
+            columns_to_use = [col for col in column_mapping.keys() if col in df_new.columns]
+            df_to_insert = df_new[columns_to_use].rename(columns=column_mapping)
+            
+            # Insert
+            with engine.begin() as conn:
+                df_to_insert.to_sql(
+                    "FoodRecalls",
+                    con=conn,            
+                    schema="dbo",        
+                    if_exists="append",
+                    index=False,
+                    method=None,         
+                )
+            print(f"{len(df_to_insert)} records inserted successfully.")
+        else:
+            print("No new records to insert.")
+    finally:
+        # ensure pool is torn down in all cases
+        engine.dispose()
 
 if __name__ == "__main__":
     main()
