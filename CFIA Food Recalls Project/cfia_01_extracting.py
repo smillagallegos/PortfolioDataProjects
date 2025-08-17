@@ -26,7 +26,7 @@ def download_raw_csv(url: str, folder: str) -> str:
 
     print("Downloading data...")
     
-    max_retries = 5
+    max_retries = 10
 
     for attempt in range(1, max_retries + 1):
         try:
