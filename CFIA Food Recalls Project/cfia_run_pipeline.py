@@ -30,26 +30,30 @@ def run_pipeline():
     """
     print("Starting CFIA data pipeline...")
 
-    try:
-        # Step 1: Extract and filter the data
-        script_name = "cfia_01_extracting.py"
-        print(f"\nRunning extracting script: ...")
-        subprocess.run(["poetry", "run", "python", script_name], check=True)
-        
-        # Step 2: Transform the filtered data
-        script_name = "cfia_02_transforming.py"
-        print(f"\nRunning transforming script: {script_name}...")
-        subprocess.run(["poetry", "run", "python", script_name], check=True)
-        
-        # Step 3: Load the cleaned data to SQL
-        script_name = "cfia_03_loading.py"
-        print(f"\nRunning loading script: {script_name}...")
-        subprocess.run(["poetry", "run", "python", script_name], check=True)
+    steps = [
+        ("cfia_01_extracting.py",  "Extracting"),
+        ("cfia_02_transforming.py","Transforming"),
+        ("cfia_03_loading.py",     "Loading"),
+    ]
 
-        print("\nPipeline completed successfully.")
+    for script, label in steps:
+        print(f"\nRunning {label} script: {script} ...")
+        try:
+            result = subprocess.run(
+                ["poetry", "run", "python", script_name],
+                 check=True
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"\nPipeline failed during: {label} ({script})")
+            if e.stdout:
+                print("\n--- STDOUT ---\n" + e.stdout)
+            if e.stderr:
+                print("\n--- STDERR ---\n" + e.stderr)
 
-    except subprocess.CalledProcessError as e:
-        print(f"\nPipeline failed: {e}")
+            # Exit non-zero on failure
+            sys.exit(e.returncode or 1)
+
+    print("\nPipeline completed successfully.")
 
 if __name__ == "__main__":
     run_pipeline()

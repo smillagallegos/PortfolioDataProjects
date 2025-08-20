@@ -26,27 +26,39 @@ def download_raw_csv(url: str, folder: str) -> str:
 
     print("Downloading data...")
     
-    max_retries = 10
+    max_retries = 5
 
     for attempt in range(1, max_retries + 1):
         try:
             # Send HTTP GET request to download CSV
-            response = requests.get(url, stream=True, timeout=200) 
-            response.raise_for_status() # Raises for non-200 status codes
-            with open(file_path, "wb") as f:
+            with requests.get(url, stream=True, timeout=200) as response:
+                response.raise_for_status() # Raises for non-200 status codes
                 # Extract in in chunks since it is a big file
                 chunk_size = int(os.getenv("CFIA_CHUNK_SIZE", 8192))
-                for chunk in response.iter_content(chunk_size=chunk_size):
-                    if chunk:
-                        f.write(chunk)
+                with open(file_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        if chunk:
+                            f.write(chunk)
             print(f"Raw data saved as: {file_path}")
             return file_path
+
         except (ChunkedEncodingError, Timeout, ConnectionError) as e:
             delay = 5 * attempt
             print(f"Attempt {attempt}: {type(e).__name__} - {e}. Retrying in {delay} seconds...")
+            if attempt == max_retries:
+                raise Exception("Max retries exceeded for downloading raw data.")
             time.sleep(delay)
+
         except requests.HTTPError as e:
             raise Exception(f"HTTP error {response.status_code} while downloading file: {e}")
+            return None
+
+        except Exception as e:
+            print(f"Unexpected error during download: {e}")
+            return None
+
+    print("Download failed after maximum retries.")
+    return None
 
 def filter_food_recalls(input_path: str, output_path: str) -> int:
     """
@@ -61,24 +73,33 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
     """
     print("\nFiltering food recalls...")
 
-    # Load the raw data into a DataFrame
-    df = pd.read_csv(input_path) 
+    try:
+        # Load the raw data into a DataFrame
+        df = pd.read_csv(input_path)
+    except Exception as e:
+        raise Exception(f"Failed to read input CSV: {e}")
 
-    # Check if 'Issue' column exists and filter for key food safety issues
-    if 'Issue' in df.columns: 
+    # Check if 'Issue' column exists
+    if 'Issue' not in df.columns:
+        raise Exception("'Issue' column not found in dataset.")
+
+    try:
+        # Filter for food-related bacterial recalls
         filtered_df = df[
-                            df['Issue'].str.contains("Salmonella|Listeria|E. Coli", na=False) &
-                            ~df['Issue'].str.contains("Listeria - Medical devices", case=False, na=False)
-                        ]
+            df['Issue'].str.contains("Salmonella|Listeria|E. Coli", na=False) &
+            ~df['Issue'].str.contains("Listeria - Medical devices", case=False, na=False)
+        ]
 
         # Save filtered records to a new CSV
         filtered_df.to_csv(output_path, index=False)
 
         print(f"Filtered food recalls saved as: {output_path}") 
         print(f"\nFound {len(filtered_df)} food recalls.")
-    else:
-        # Raise error if expected column is missing
-        raise ValueError("'Issue' column not found in dataset.")
+
+        return len(filtered_df)
+
+    except Exception as e:
+        raise Exception(f"Error during filtering or saving: {e}")
 
 def main():
     """
@@ -93,12 +114,18 @@ def main():
 
     downloaded_file = download_raw_csv(url, folder)
 
+     # Stop if download failed
+    if not downloaded_file or not os.path.exists(downloaded_file):
+        raise Exception("Download failed or file is incomplete. Aborting pipeline.")
+
     # Filter for relevant food recall records
-    filter_food_recalls(downloaded_file, filtered_path)
+    filtered_df_len = filter_food_recalls(downloaded_file, filtered_path)
+    if not filtered_df_len:
+        raise Exception("No bacterial food recalls found after filtering. Aborting pipeline.")
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
         print(f"Pipeline failed: {e}", file=sys.stderr)
-        sys.exit(1)  # Forces non-zero exit code so GitHub Actions fails
+        sys.exit(1)  # Forces non-zero exit code

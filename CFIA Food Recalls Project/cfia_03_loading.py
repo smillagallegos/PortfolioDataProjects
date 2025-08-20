@@ -29,8 +29,24 @@ def get_sqlalchemy_engine():
         "&Encrypt=yes"
         "&TrustServerCertificate=no"
     )
-    engine = sqlalchemy.create_engine(conn_str, fast_executemany=True)
-    return engine
+    
+    max_retries = 5
+
+    # Logic to retry the connection to the db
+    for attempt in range(1, max_retries + 1):
+        try:
+            engine = sqlalchemy.create_engine(conn_str, fast_executemany=True)
+            # Test connection
+            with engine.connect() as conn:
+                pass
+            print("Database connection established.")
+            return engine
+
+        except OperationalError as e:
+            print(f"Attempt {attempt}: Database connection failed - {e}")
+            if attempt == max_retries:
+                raise Exception("Max retries exceeded for SQL database connection.")
+            time.sleep(delay_seconds * attempt)
 
 
 def fetch_existing_ids(engine):
@@ -60,47 +76,63 @@ def main():
 
     # Check if the directory exists
     if not dir_path.exists() or not dir_path.is_dir():
-        print(f"Directory {dir_path.name} does not exist.")
-        sys.exit(1)
+        raise Exception(f"Directory {dir_path.name} does not exist.")
 
-    # Call function to get yesterday's file name
-    filename = "processed_cfia_food_recalls.csv"
-    processed_file_path = dir_path / filename
+    # Call function to get processed file
+    processed_file_path = dir_path / "processed_cfia_food_recalls.csv"
     
+    if not processed_file_path.exists():
+        raise Exception(f"File {processed_file_path.name} does not exist.")
+
     # Read the CSV file into a DataFrame and ignore timestamp comment
     df = pd.read_csv(processed_file_path, comment="#")
+    if df.empty:
+        raise Exception("Processed file is empty after read. Aborting pipeline.")
+
+    # Validate the structure of the DataFrame
+    required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise Exception(f"Processed file is missing required columns: {missing_columns}")
 
     # Connect with SQLAlchemy engine
     engine = get_sqlalchemy_engine()
 
     try:
         # Fetch existing IDs to avoid duplicates
-        existing_ids = fetch_existing_ids(engine)
-        print(f"Found {len(existing_ids)} existing IDs in the database.")
+        try:
+            existing_ids = fetch_existing_ids(engine)
+            print(f"Found {len(existing_ids)} existing IDs in the database.")
+        except Exception as e:
+            raise Exception(f"Failed to fetch existing IDs: {e}")
 
         # Filter out records that already exist
         df_new = df[~df['NID'].isin(existing_ids)]
 
-        if not df_new.empty:
-            # Prepare DataFrame for SQL (rename columns if needed)
-            column_mapping = {
-                "NID": "NID",
-                "Title": "Title",
-                "URL": "URL",
-                "Product": "Product",
-                "Issue": "Issue",
-                "Main issue": "MainIssue",
-                "Secondary issue": "SecondaryIssue",
-                "Bacteria subtype": "BacteriaSubtype",
-                "Category": "Category",
-                "Recall class": "Class",
-                "Last updated": "LastUpdated",
-                "Archived": "IsArchived"
-            }
-            # Only use columns present in both DataFrame and mapping
-            columns_to_use = [col for col in column_mapping.keys() if col in df_new.columns]
-            df_to_insert = df_new[columns_to_use].rename(columns=column_mapping)
+        if df_new.empty:
+            print("No new records to insert. Exiting gracefully.")
+            return
+
+        # Prepare DataFrame for SQL (rename columns if needed)
+        column_mapping = {
+            "NID": "NID",
+            "Title": "Title",
+            "URL": "URL",
+            "Product": "Product",
+            "Issue": "Issue",
+            "Main issue": "MainIssue",
+            "Secondary issue": "SecondaryIssue",
+            "Bacteria subtype": "BacteriaSubtype",
+            "Category": "Category",
+            "Recall class": "Class",
+            "Last updated": "LastUpdated",
+            "Archived": "IsArchived"
+        }
+        # Only use columns present in both DataFrame and mapping
+        columns_to_use = [col for col in column_mapping.keys() if col in df_new.columns]
+        df_to_insert = df_new[columns_to_use].rename(columns=column_mapping)
             
+        try:
             # Insert
             with engine.begin() as conn:
                 df_to_insert.to_sql(
@@ -111,12 +143,19 @@ def main():
                     index=False,
                     method=None,         
                 )
+
             print(f"{len(df_to_insert)} records inserted successfully.")
-        else:
-            print("No new records to insert.")
+
+        except Exception as e:
+            raise Exception(f"Insert failed : {e}")
+
     finally:
         # ensure pool is torn down in all cases
         engine.dispose()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"Pipeline failed: {e}", file=sys.stderr)
+        sys.exit(1)  # Forces non-zero exit code

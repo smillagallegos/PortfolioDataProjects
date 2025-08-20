@@ -18,12 +18,11 @@ def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
         pd.DataFrame: A DataFrame with the loaded data, or empty if file not found.
     """
     # Check if the file exists and read it
-    if recalls_file_path.exists():
-        print(f"Successfully read {recalls_file_path.name}")
-        return pd.read_csv(recalls_file_path)
-    else:
-        print(f"File {recalls_file_path.name} does not exist.")
-        return pd.DataFrame() # Create an empty data frame to avoid an error
+    if not recalls_file_path.exists():
+        raise Exception(f"File {recalls_file_path.name} does not exist.")
+
+    print(f"Successfully read {recalls_file_path.name}")
+    return pd.read_csv(recalls_file_path)
 
 def clean_recalls_data(df_recalls: pd.DataFrame) -> pd.DataFrame:
     """
@@ -198,45 +197,41 @@ def main():
     # Convert string into Path object
     dir_path = Path("recalls")
 
-    try:
-        # Check if the directory exists
-        if not dir_path.exists() or not dir_path.is_dir():
-            print(f"Directory {dir_path.name} does not exist.")
-            return
+    # Check if the directory exists
+    if not dir_path.exists() or not dir_path.is_dir():
+        raise Exception(f"Directory {dir_path.name} does not exist.")
 
-        # Get full path to read the file
-        filename = "cfia_food_recalls.csv"
-        recalls_file_path = dir_path / filename
-        processed_file_path = dir_path / f"processed_{filename}"
+    # Get full path to read the file
+    filename = "cfia_food_recalls.csv"
+    recalls_file_path = dir_path / filename
+    processed_file_path = dir_path / f"processed_{filename}"
 
-        # Call the function to get recalls data frame
-        df_recalls = load_recall_data(recalls_file_path)
+    # Call the function to get recalls data frame
+    df_recalls = load_recall_data(recalls_file_path)
 
-        if df_recalls.empty:
-            print(f"Data frame {filename} not found")
-            return
+    if df_recalls.empty:
+        raise Exception(f"Data frame {filename} not found")
 
-        # Call the function to clean the data frame (missing values, duplicates, etc.)
-        df_recalls_clean = clean_recalls_data(df_recalls)
+    # Call the function to clean the data frame (missing values, duplicates, etc.)
+    df_recalls_clean = clean_recalls_data(df_recalls)
 
-        # Call the function to make 'Recall class' column numerical
-        df_recalls_processed = process_recalls_columns(df_recalls_clean)
+    # Call the function to convert to different data type or fill missing values
+    df_recalls_processed = process_recalls_columns(df_recalls_clean)
 
-        # Clasify Issues by Subcategories (Second Issue / Bacteria Subtype)
-        df_recalls_processed[['Main issue', 'Secondary issue', 'Bacteria subtype']] = df_recalls_processed['Issue'].apply(parse_issue)
+    # Clasify Issues by Subcategories (Second Issue / Bacteria Subtype)
+    df_recalls_processed[['Main issue', 'Secondary issue', 'Bacteria subtype']] = df_recalls_processed['Issue'].apply(parse_issue)
 
-        # Show a preview of the data
-        print(f"\n{df_recalls_processed.head(10)}")
+    # Show a preview of the data
+    print(f"\n{df_recalls_processed.head(10)}")
 
-        # Call the script to save the processed data
-        save_processed_data(processed_file_path, df_recalls_processed)
-
-    except Exception as e:
-        # Catch and print any errors during the pipeline run
-        print(f"\nPipeline failed: {e}")
-        traceback.print_exc()  # This will print the full traceback, showing the exact line where the error occurred.
+    # Call the script to save the processed data
+    save_processed_data(processed_file_path, df_recalls_processed)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"Pipeline failed: {e}", file=sys.stderr)
+        sys.exit(1)  # Forces non-zero exit code
 
 
