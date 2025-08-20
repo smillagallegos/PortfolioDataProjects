@@ -40,7 +40,7 @@ def run_pipeline():
         print(f"\nRunning {label} script: {script} ...")
         try:
             result = subprocess.run(
-                ["poetry", "run", "python", script_name],
+                ["poetry", "run", "python", script],
                  check=True
             )
         except subprocess.CalledProcessError as e:
