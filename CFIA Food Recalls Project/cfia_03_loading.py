@@ -10,7 +10,7 @@ import os
 # Load variables from .env file
 load_dotenv()
 
-def get_sqlalchemy_engine(max_retrie=5, delay=5):
+def get_sqlalchemy_engine(max_retries=5, delay=5):
     """
     Create and return a SQLAlchemy engine with fast_executemany enabled for SQL Server.
     """
