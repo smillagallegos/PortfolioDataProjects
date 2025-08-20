@@ -6,7 +6,7 @@ import time
 import sys
 from requests.exceptions import ChunkedEncodingError, Timeout, ConnectionError
 
-def download_raw_csv(url: str, folder: str) -> str:
+def download_raw_csv(url: str, folder: str, max_retries=5, delay=5) -> str:
     """
     Downloads the CFIA raw CSV file from the given URL and saves it to the specified folder.
 
@@ -25,8 +25,6 @@ def download_raw_csv(url: str, folder: str) -> str:
     os.makedirs(folder, exist_ok=True)
 
     print("Downloading data...")
-    
-    max_retries = 5
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -43,11 +41,10 @@ def download_raw_csv(url: str, folder: str) -> str:
             return file_path
 
         except (ChunkedEncodingError, Timeout, ConnectionError) as e:
-            delay = 5 * attempt
             print(f"Attempt {attempt}: {type(e).__name__} - {e}. Retrying in {delay} seconds...")
             if attempt == max_retries:
                 raise Exception("Max retries exceeded for downloading raw data.")
-            time.sleep(delay)
+            time.sleep(delay * attempt)
 
         except requests.HTTPError as e:
             raise Exception(f"HTTP error {response.status_code} while downloading file: {e}")

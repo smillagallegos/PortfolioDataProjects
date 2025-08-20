@@ -2,6 +2,7 @@ import pandas as pd
 from pathlib import Path
 import sqlalchemy 
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from dotenv import load_dotenv
 import sys
 import os
@@ -9,7 +10,7 @@ import os
 # Load variables from .env file
 load_dotenv()
 
-def get_sqlalchemy_engine():
+def get_sqlalchemy_engine(max_retrie=5, delay=5):
     """
     Create and return a SQLAlchemy engine with fast_executemany enabled for SQL Server.
     """
@@ -29,8 +30,6 @@ def get_sqlalchemy_engine():
         "&Encrypt=yes"
         "&TrustServerCertificate=no"
     )
-    
-    max_retries = 5
 
     # Logic to retry the connection to the db
     for attempt in range(1, max_retries + 1):
@@ -46,7 +45,7 @@ def get_sqlalchemy_engine():
             print(f"Attempt {attempt}: Database connection failed - {e}")
             if attempt == max_retries:
                 raise Exception("Max retries exceeded for SQL database connection.")
-            time.sleep(delay_seconds * attempt)
+            time.sleep(delay * attempt)
 
 
 def fetch_existing_ids(engine):
