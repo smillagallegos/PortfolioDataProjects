@@ -22,7 +22,7 @@ def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
         raise Exception(f"File {recalls_file_path.name} does not exist.")
 
     print(f"Successfully read {recalls_file_path.name}")
-    return pd.read_csv(recalls_file_path)
+    return pd.read_csv(recalls_file_path, comment="#")
 
 def clean_recalls_data(df_recalls: pd.DataFrame) -> pd.DataFrame:
     """
@@ -180,12 +180,11 @@ def save_processed_data (processed_file_path: Path, df_recalls_processed: pd.Dat
     """
 
     # Generate ET timestamp
-    eastern = pytz.timezone("America/Toronto")
-    timestamp_et = datetime.now(eastern).strftime("%Y-%m-%d %H:%M:%S %Z")
+    timestamp_et = datetime.now(pytz.timezone("America/Toronto")).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     # Open the file and write comment + updated data
     with open(processed_file_path, "w", encoding="utf-8") as f:
-        f.write(f"# Last updated (ET): {timestamp_et}\n")
+        f.write(f"# Last workflow run on (ET): {timestamp_et}\n")
         df_recalls_processed.to_csv(f, index=False, encoding="utf-8")
 
     print(f"\nData successfully saved to {processed_file_path.name}")

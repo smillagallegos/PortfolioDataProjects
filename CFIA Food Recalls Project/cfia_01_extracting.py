@@ -5,6 +5,8 @@ import subprocess
 import time
 import sys
 from requests.exceptions import ChunkedEncodingError, Timeout, ConnectionError
+from datetime import datetime
+import pytz
 
 def download_raw_csv(url: str, folder: str, max_retries=5, delay=5) -> str:
     """
@@ -31,9 +33,17 @@ def download_raw_csv(url: str, folder: str, max_retries=5, delay=5) -> str:
             # Send HTTP GET request to download CSV
             with requests.get(url, stream=True, timeout=200) as response:
                 response.raise_for_status() # Raises for non-200 status codes
+
+                # Prepare timestamp header (ET)
+                timestamp_et = datetime.now(pytz.timezone("America/Toronto")).strftime("%Y-%m-%d %H:%M:%S %Z")
+                header = f"# Last workflow run on (ET): {timestamp_et}\n"
+
                 # Extract in in chunks since it is a big file
                 chunk_size = int(os.getenv("CFIA_CHUNK_SIZE", 8192))
+
+                # Open once, write header (text) then streamed chunks (bytes)
                 with open(file_path, "wb") as f:
+                    f.write(header.encode("utf-8"))
                     for chunk in response.iter_content(chunk_size=chunk_size):
                         if chunk:
                             f.write(chunk)
@@ -72,7 +82,7 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
 
     try:
         # Load the raw data into a DataFrame
-        df = pd.read_csv(input_path)
+        df = pd.read_csv(input_path, comment="#")
     except Exception as e:
         raise Exception(f"Failed to read input CSV: {e}")
 
@@ -87,8 +97,14 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
             ~df['Issue'].str.contains("Listeria - Medical devices", case=False, na=False)
         ]
 
-        # Save filtered records to a new CSV
-        filtered_df.to_csv(output_path, index=False)
+        # Generate timestamp in ET
+        timestamp_et = datetime.now(pytz.timezone("America/Toronto")).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+        # Save filtered records with timestamp as comment
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(f"# Last workflow run on (ET): {timestamp_et}\n")
+            # Save filtered records to a new CSV
+            filtered_df.to_csv(output_path, index=False)
 
         print(f"Filtered food recalls saved as: {output_path}") 
         print(f"\nFound {len(filtered_df)} food recalls.")
