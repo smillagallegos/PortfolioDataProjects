@@ -82,7 +82,7 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
 
     try:
         # Load the raw data into a DataFrame
-        df = pd.read_csv(input_path, skiprows=1)
+        df = pd.read_csv(input_path)
     except Exception as e:
         raise Exception(f"Failed to read input CSV: {e}")
 
