@@ -6,6 +6,7 @@ import numpy as np
 import re
 from datetime import datetime
 import pytz
+import sys
 
 def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
     """
@@ -201,9 +202,8 @@ def main():
         raise Exception(f"Directory {dir_path.name} does not exist.")
 
     # Get full path to read the file
-    filename = "cfia_food_recalls.csv"
-    recalls_file_path = dir_path / filename
-    processed_file_path = dir_path / f"processed_{filename}"
+    recalls_file_path = dir_path / "cfia_food_recalls.csv"
+    processed_file_path = dir_path / "processed_cfia_food_recalls.csv"
 
     # Call the function to get recalls data frame
     df_recalls = load_recall_data(recalls_file_path)
