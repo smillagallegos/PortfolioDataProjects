@@ -6,6 +6,7 @@ from sqlalchemy.exc import OperationalError
 from dotenv import load_dotenv
 import sys
 import os
+import time
 
 # Load variables from .env file
 load_dotenv()
