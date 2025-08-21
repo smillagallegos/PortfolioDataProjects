@@ -37,7 +37,7 @@ cfia-food-recalls/
 - Python **3.12+**
 - [Poetry](https://python-poetry.org/) for dependency management
 - Microsoft SQL Server (local or cloud)
-- (Optional) Task Scheduler, cron, or cloud service for automation
+- (Optional) Task Scheduler, cron, GitHub Actions, or cloud service for automation
 
 ---
 
