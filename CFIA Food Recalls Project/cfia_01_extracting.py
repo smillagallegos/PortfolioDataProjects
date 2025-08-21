@@ -43,7 +43,7 @@ def download_raw_csv(url: str, folder: str, max_retries=5, delay=5) -> str:
 
                 # Open once, write header (text) then streamed chunks (bytes)
                 with open(file_path, "wb") as f:
-                    f.write(header.encode("utf-8"))
+                    #f.write(header.encode("utf-8"))
                     for chunk in response.iter_content(chunk_size=chunk_size):
                         if chunk:
                             f.write(chunk)
