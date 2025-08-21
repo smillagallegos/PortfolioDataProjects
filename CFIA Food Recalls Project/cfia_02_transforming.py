@@ -24,6 +24,9 @@ def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
 
     print(f"Successfully read {recalls_file_path.name}")
     df = pd.read_csv(recalls_file_path)
+
+    # Show a preview of the data
+    print(f"Dataframe\n{df.head(10)}")
     
     # Validate the structure of the DataFrame
     required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archived']
