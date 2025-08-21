@@ -3,7 +3,7 @@ name: CFIA Pipeline
 on:
   workflow_dispatch:        # Allow manual runs
   schedule:
-    - cron: "0 18 * * *"    # Run daily at 17:00 UTC
+    - cron: "0 18 * * *"    # Run daily at 18:00 UTC (14:00 ET)
 
 permissions:
   id-token: write            # Required for OIDC login
@@ -72,9 +72,11 @@ jobs:
       - name: Install Poetry
         run: pipx install poetry==2.1.3
 
+      # Step 5: Install dependencies
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
-        
+
+      # Step 6: Run the pipeline
       - name: Run pipeline
         env:
           CFIA_SQL_SERVER:   ${{ secrets.CFIA_SQL_SERVER }}
@@ -84,13 +86,22 @@ jobs:
         run: poetry run python cfia_run_pipeline.py
         continue-on-error: false
 
-      # Step 5: Check if the processed file was updated
+      # Step 7: Check if the processed file was updated
       - name: Show first lines of processed file (debug)
         run: |
           echo "Dumping head of processed file:"
           head -n 3 "recalls/processed_cfia_food_recalls.csv"
 
-      # Step 6: Close firewall rule
+      # Step 8: Commit the updated CSV back to repo
+      - name: Commit updated CSV
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: "processed_cfia_food_recalls.csv"
+          cwd: "./recalls"
+          message: Push processed food recalls file generated from the workflow
+          committer_name: GitHub Actions
+
+      # Step 9: Close firewall rule
       - name: Close firewall
         if: always()
         run: |
