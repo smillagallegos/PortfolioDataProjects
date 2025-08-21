@@ -96,7 +96,7 @@ jobs:
       - name: Commit updated CSV
         uses: EndBug/add-and-commit@v9
         with:
-          add: "recalls/processed_cfia_food_recalls.csv"
+          add: '["recalls/cfia_recalls_raw.csv", "recalls/cfia_food_recalls.csv", "recalls/processed_cfia_food_recalls.csv"]'
           cwd: "./CFIA Food Recalls Project"
           message: Push processed food recalls file generated from the workflow
           default_author: github_actions
