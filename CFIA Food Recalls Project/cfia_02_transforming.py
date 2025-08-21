@@ -29,7 +29,7 @@ def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
     required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archived']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
-        raise Exception(f"Processed file is missing required columns: {missing_columns}")
+        raise Exception(f"Filtered file is missing required columns: {missing_columns}")
 
     return df
 

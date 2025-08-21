@@ -90,7 +90,7 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
     required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archived']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
-        raise Exception(f"Processed file is missing required columns: {missing_columns}")
+        raise Exception(f"Raw file is missing required columns: {missing_columns}")
 
     # Check if 'Issue' column exists
     if 'Issue' not in df.columns:
