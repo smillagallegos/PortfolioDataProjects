@@ -90,7 +90,7 @@ def main():
         raise Exception("Processed file is empty after read. Aborting pipeline.")
 
     # Validate the structure of the DataFrame
-    required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archive']
+    required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archived']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise Exception(f"Processed file is missing required columns: {missing_columns}")

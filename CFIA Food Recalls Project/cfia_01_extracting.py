@@ -87,7 +87,7 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
         raise Exception(f"Failed to read input CSV: {e}")
 
     # Validate the structure of the DataFrame
-    required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archive']
+    required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archived']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise Exception(f"Processed file is missing required columns: {missing_columns}")
