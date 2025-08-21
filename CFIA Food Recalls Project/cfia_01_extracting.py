@@ -1,12 +1,12 @@
 import requests 
 import pandas as pd 
 import os
-import subprocess
 import time
 import sys
 from requests.exceptions import ChunkedEncodingError, Timeout, ConnectionError
 from datetime import datetime
 import pytz
+import tempfile
 
 def download_raw_csv(url: str, folder: str, max_retries=5, delay=5) -> str:
     """
@@ -29,26 +29,32 @@ def download_raw_csv(url: str, folder: str, max_retries=5, delay=5) -> str:
     print("Downloading data...")
 
     for attempt in range(1, max_retries + 1):
+        tmp_path = None
         try:
             # Send HTTP GET request to download CSV
             with requests.get(url, stream=True, timeout=200) as response:
                 response.raise_for_status() # Raises for non-200 status codes
 
-                # Prepare timestamp header (ET)
-                timestamp_et = datetime.now(pytz.timezone("America/Toronto")).strftime("%Y-%m-%d %H:%M:%S %Z")
-                header = f"# Last workflow run on (ET): {timestamp_et}\n"
-
                 # Extract in in chunks since it is a big file
                 chunk_size = int(os.getenv("CFIA_CHUNK_SIZE", 8192))
 
-                # Open once, write header (text) then streamed chunks (bytes)
-                with open(file_path, "wb") as f:
-                    #f.write(header.encode("utf-8"))
+                # Create a temp file to hold raw content
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    tmp_path = tmp.name
                     for chunk in response.iter_content(chunk_size=chunk_size):
                         if chunk:
-                            f.write(chunk)
-            print(f"Raw data saved as: {file_path}")
-            return file_path
+                            tmp.write(chunk)
+
+                # Add timestamp at the top when saving final file
+                timestamp_et = datetime.now(pytz.timezone("America/Toronto")).strftime("%Y-%m-%d %H:%M:%S")
+                with open(file_path, "w", encoding="utf-8") as f_out:
+                    f_out.write(f"# Last workflow run on (ET): {timestamp_et}\n")
+                    with open(tmp_path, "r", encoding="utf-8", newline="") as f_in:
+                        f_out.write(f_in.read())
+
+                os.remove(tmp_path)  # cleanup temp
+                print(f"Raw data saved as: {file_path}")
+                return file_path
 
         except (ChunkedEncodingError, Timeout, ConnectionError) as e:
             print(f"Attempt {attempt}: {type(e).__name__} - {e}. Retrying in {delay} seconds...")
@@ -82,7 +88,7 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
 
     try:
         # Load the raw data into a DataFrame
-        df = pd.read_csv(input_path)
+        df = pd.read_csv(input_path, skiprows=1)
     except Exception as e:
         raise Exception(f"Failed to read input CSV: {e}")
 

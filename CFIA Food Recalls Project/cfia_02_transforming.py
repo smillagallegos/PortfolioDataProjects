@@ -1,6 +1,5 @@
 import pandas as pd
 from pathlib import Path
-import subprocess
 import traceback
 import numpy as np
 import re
