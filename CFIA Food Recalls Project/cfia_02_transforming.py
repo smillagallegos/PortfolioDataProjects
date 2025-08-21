@@ -23,7 +23,7 @@ def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
         raise Exception(f"File {recalls_file_path.name} does not exist.")
 
     print(f"Successfully read {recalls_file_path.name}")
-    df = pd.read_csv(recalls_file_path, skiprows=1)
+    df = pd.read_csv(recalls_file_path)
     
     # Validate the structure of the DataFrame
     required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archived']
