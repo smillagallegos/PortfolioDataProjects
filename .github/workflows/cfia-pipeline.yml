@@ -98,7 +98,7 @@ jobs:
         with:
           add: '["recalls/cfia_recalls_raw.csv", "recalls/cfia_food_recalls.csv", "recalls/processed_cfia_food_recalls.csv"]'
           cwd: "./CFIA Food Recalls Project"
-          message: Push processed food recalls file generated from the workflow
+          message: Commit recall files generated from the latest workflow
           default_author: github_actions
 
       # Step 9: Close firewall rule
