@@ -23,7 +23,7 @@ def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
         raise Exception(f"File {recalls_file_path.name} does not exist.")
 
     print(f"Successfully read {recalls_file_path.name}")
-    df = pd.read_csv(recalls_file_path)
+    df = pd.read_csv(recalls_file_path, skiprows=1)
 
     # Show a preview of the data
     print(f"Dataframe\n{df.head(10)}")
