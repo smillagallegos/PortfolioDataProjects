@@ -96,10 +96,10 @@ jobs:
       - name: Commit updated CSV
         uses: EndBug/add-and-commit@v9
         with:
-          add: "processed_cfia_food_recalls.csv"
-          cwd: "./recalls"
-          message: Push processed food recalls file generated from the workflow
-          committer_name: GitHub Actions
+          add: '["recalls/cfia_recalls_raw.csv", "recalls/cfia_food_recalls.csv", "recalls/processed_cfia_food_recalls.csv"]'
+          cwd: "./CFIA Food Recalls Project"
+          message: Commit recall files generated from the latest workflow
+          default_author: github_actions
 
       # Step 9: Close firewall rule
       - name: Close firewall
