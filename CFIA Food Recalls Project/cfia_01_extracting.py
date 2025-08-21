@@ -110,7 +110,7 @@ def filter_food_recalls(input_path: str, output_path: str) -> int:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(f"# Last workflow run on (ET): {timestamp_et}\n")
             # Save filtered records to a new CSV
-            filtered_df.to_csv(output_path, index=False)
+            filtered_df.to_csv(f, index=False, encoding="utf-8")
 
         print(f"Filtered food recalls saved as: {output_path}") 
         print(f"\nFound {len(filtered_df)} food recalls.")
