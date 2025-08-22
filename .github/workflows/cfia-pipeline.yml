@@ -101,7 +101,35 @@ jobs:
           message: Commit recall files generated from the latest workflow
           default_author: github_actions
 
-      # Step 9: Close firewall rule
+      # Step 9: Get Client Credentials
+      - name: Get AAD token (client credentials)
+        id: token
+        run: |
+          resp=$(curl -s -X POST \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "client_id=${{ secrets.POWERBI_CLIENT_ID }}" \
+            -d "client_secret=${{ secrets.POWERBI_CLIENT_SECRET }}" \
+            -d "scope=https://analysis.windows.net/powerbi/api/.default" \
+            -d "grant_type=client_credentials" \
+            "https://login.microsoftonline.com/${{ secrets.POWERBI_TENANT_ID }}/oauth2/v2.0/token")
+          echo "token=$(echo "$resp" | jq -r .access_token)" >> $GITHUB_OUTPUT
+
+      # Step 10: Refresh PBI Dashboard
+      - name: Trigger dataset refresh
+        id: refresh
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer ${{ steps.token.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            "https://api.powerbi.com/v1.0/myorg/groups/${{ secrets.POWERBI_WORKSPACE_ID }}/datasets/${{ secrets.POWERBI_DATASET_ID }}/refreshes" \
+            -d '{"type":"Full"}' > status.txt
+          code=$(cat status.txt)
+          if [ "$code" != "202" ] && [ "$code" != "200" ]; then
+            echo "Unexpected HTTP $code from refresh trigger"
+            exit 1
+          fi
+
+      # Step 11: Close firewall rule
       - name: Close firewall
         if: always()
         run: |
