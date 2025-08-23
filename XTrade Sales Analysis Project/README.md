@@ -6,6 +6,6 @@ I rebranded the fictional company (originally XSales) as **XTrade**, designed a 
 
 **Key skills applied:** Excel formulas, Pivot Tables, DAX, Power BI visualization, business analysis, and reporting.  
 
-📊 [Excel Workbook Preview]([https://1drv.ms/your-link](https://1drv.ms/x/c/f14c8743c62347e1/ERqxiGQin0tKmOVopTy-ghMBPzebsssPydSfDkqGYVLrdw?e=OZRj3x))  
+📊 [Excel Workbook Preview]([https://1drv.ms/your-link](https://1drv.ms/x/c/f14c8743c62347e1/ERqxiGQin0tKmOVopTy-ghMBPzebsssPydSfDkqGYVLrdw?e=OZRj3x)])  
 
 *Note: This preview highlights the key insights and structure of the workbook. To protect the underlying dataset and proprietary formulas, I only share the complete file upon request. Please contact me at **salma_milla@outlook.com** to request access.*
