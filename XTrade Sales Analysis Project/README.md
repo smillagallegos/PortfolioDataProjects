@@ -1,5 +1,11 @@
-# XTrade Project  
+# XTrade Project
 
-This project was developed as part of a business case scenario in the *Máster en Power BI* course by *Daxus Latam*. The case required analyzing B2B sales data for a fictional company (originally named XSales). I rebranded the company as **XTrade** and designed a custom business-oriented logo to establish a stronger visual identity and create a more realistic executive dashboard experience. While the business context and dataset were provided, I completed the entire analysis independently, structuring the problem, exploring and cleaning the data in Excel, and designing the Power BI dashboard. I later compared my solution with the course walkthrough to validate and refine my approach.  
+This project demonstrates my ability to analyze B2B sales data, build executive dashboards, and communicate insights using Excel and Power BI. It was developed as part of a business case in the *Máster en Power BI* course by *Daxus Latam*.  
 
-For recruiters: This preview https://1drv.ms/x/c/f14c8743c62347e1/ERqxiGQin0tKmOVopTy-ghMBPzebsssPydSfDkqGYVLrdw?e=EbuTL4 highlights the key insights and structure of the Excel workbook. To protect the underlying dataset and proprietary formulas from unauthorized use, I only share the complete file upon request. If you would like to review it in more detail, please contact me at salma_milla@outlook.com. I'd be happy to provide controlled access for evaluation.
+I rebranded the fictional company (originally XSales) as **XTrade**, designed a custom logo for a more realistic identity, and independently completed the analysis from data exploration and cleaning in Excel to building a Power BI dashboard. I later compared my solution with the course walkthrough to validate and refine my approach.  
+
+**Key skills applied:** Excel formulas, Pivot Tables, DAX, Power BI visualization, business analysis, and reporting.  
+
+📊 [Excel Workbook Preview](https://1drv.ms/your-link)  
+
+*Note: This preview highlights the key insights and structure of the workbook. To protect the underlying dataset and proprietary formulas, I only share the complete file upon request. Please contact me at **salma_milla@outlook.com** to request access.*
