@@ -129,7 +129,11 @@ jobs:
             exit 1
           fi
 
-      # Step 11: Close firewall rule
+      # Step 11: Show dashboard link
+      - name: Print dashboard link
+        run: echo "Dashboard refreshed! Open it here: https://app.powerbi.com/view?r=eyJrIjoiMzc1MDlhNmEtNzliNi00ZDA4LWI1NWEtZjFlZGFhZTU0ZDMxIiwidCI6ImVmNTJhMmE2LTk1OGUtNDQ2ZC05N2Y1LTc3NmI5NGI4YTBjYyJ9"
+
+      # Step 12: Close firewall rule
       - name: Close firewall
         if: always()
         run: |
