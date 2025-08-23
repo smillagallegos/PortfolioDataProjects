@@ -26,7 +26,7 @@ cfia-food-recalls/
 - **Data Cleaning & Transformation** – Standardizes formats, extracts key attributes, and classifies hazards.
 - **SQL Server Integration** – Stores processed data in SQL Server using SQLAlchemy for easy querying.
 - **Modular Scripts** – Each ETL stage can be run independently or as part of the full pipeline.
-- **Automation Ready** – Can be scheduled using Windows Task Scheduler, cron jobs, or adapted for cloud deployment.
+- **Automation Ready** – Can be scheduled using Windows Task Scheduler, cron jobs, GitHub Actions, or adapted for cloud deployment.
 
 ---
 
@@ -84,6 +84,13 @@ poetry run python cfia_03_loading.py
 ```
 
 ---
+
+### Pipeline Flowchart
+    A[Extract] --> B[Transform]
+    B --> C[Load]
+    C --> D[Automate (GitHub Actions)]
+    D --> E[Visualize (Power BI Dashboard)]
+
 
 ## Data Folder: `recalls/`
 
