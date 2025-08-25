@@ -8,5 +8,10 @@ __pycache__/
 # Env variables file
 .env
 
-# Ignore private utilities
+# Private utilities
 /cfia_private_utils/
+
+# Filtered and processed file
+cfia_food_recalls.csv
+processed_cfia_food_recalls.csv
+
