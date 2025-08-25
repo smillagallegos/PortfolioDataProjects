@@ -7,3 +7,6 @@ __pycache__/
 
 # Env variables file
 .env
+
+# Ignore private utilities
+/cfia_private_utils/

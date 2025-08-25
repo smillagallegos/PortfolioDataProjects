@@ -1,61 +1,12 @@
 import pandas as pd
 from pathlib import Path
-import sqlalchemy 
-from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
-from dotenv import load_dotenv
 import sys
-import os
-import time
 
-# Load variables from .env file
-load_dotenv()
+# Add private folder to sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent / "cfia_private_utils"))
 
-def get_sqlalchemy_engine(max_retries=5, delay=5):
-    """
-    Create and return a SQLAlchemy engine with fast_executemany enabled for SQL Server.
-    """
-
-    server = os.getenv("CFIA_SQL_SERVER")       
-    database = os.getenv("CFIA_SQL_DATABASE")   
-    username = os.getenv("CFIA_SQL_USER")       
-    password = os.getenv("CFIA_SQL_PASSWORD")   
-
-    if not all([server, database, username, password]):
-        raise ValueError("All required DB environment variables must be set.")
-
-    driver = "ODBC Driver 18 for SQL Server"
-    conn_str = (
-        f"mssql+pyodbc://{username}:{password}@{server}/{database}"
-        f"?driver={driver.replace(' ', '+')}"
-        "&Encrypt=yes"
-        "&TrustServerCertificate=no"
-    )
-
-    # Logic to retry the connection to the db
-    for attempt in range(1, max_retries + 1):
-        try:
-            engine = sqlalchemy.create_engine(conn_str, fast_executemany=True)
-            # Test connection
-            with engine.connect() as conn:
-                pass
-            print("Database connection established.")
-            return engine
-
-        except OperationalError as e:
-            print(f"Attempt {attempt}: Database connection failed - {e}")
-            if attempt == max_retries:
-                raise Exception("Max retries exceeded for SQL database connection.")
-            time.sleep(delay * attempt)
-
-
-def fetch_existing_ids(engine):
-    """
-    Fetch all existing NIDs from the FoodRecalls table using SQLAlchemy.
-    """
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT NID FROM dbo.FoodRecalls"))
-        return {row[0] for row in result}
+# Import private DB functions
+from db_utils import load_to_database
     
 def main():
     """
@@ -90,68 +41,14 @@ def main():
         raise Exception("Processed file is empty after read. Aborting pipeline.")
 
     # Validate the structure of the DataFrame
-    required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archived']
+    required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 
+                        'Category', 'Recall class', 'Last updated', 'Archived']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise Exception(f"Processed file is missing required columns: {missing_columns}")
 
-    # Connect with SQLAlchemy engine
-    engine = get_sqlalchemy_engine()
-
-    try:
-        # Fetch existing IDs to avoid duplicates
-        try:
-            existing_ids = fetch_existing_ids(engine)
-            print(f"Found {len(existing_ids)} existing IDs in the database.")
-        except Exception as e:
-            raise Exception(f"Failed to fetch existing IDs: {e}")
-
-        # Filter out records that already exist
-        df_new = df[~df['NID'].isin(existing_ids)]
-
-        if df_new.empty:
-            print("No new records to insert. Exiting gracefully.")
-            return
-
-        # Prepare DataFrame for SQL (rename columns if needed)
-        column_mapping = {
-            "NID": "NID",
-            "Title": "Title",
-            "URL": "URL",
-            "Product": "Product",
-            "Issue": "Issue",
-            "Main issue": "MainIssue",
-            "Secondary issue": "SecondaryIssue",
-            "Bacteria subtype": "BacteriaSubtype",
-            "Category": "Category",
-            "Recall class": "Class",
-            "Last updated": "LastUpdated",
-            "Archived": "IsArchived"
-        }
-        # Only use columns present in both DataFrame and mapping
-        columns_to_use = [col for col in column_mapping.keys() if col in df_new.columns]
-        df_to_insert = df_new[columns_to_use].rename(columns=column_mapping)
-            
-        try:
-            # Insert
-            with engine.begin() as conn:
-                df_to_insert.to_sql(
-                    "FoodRecalls",
-                    con=conn,            
-                    schema="dbo",        
-                    if_exists="append",
-                    index=False,
-                    method=None,         
-                )
-
-            print(f"{len(df_to_insert)} records inserted successfully.")
-
-        except Exception as e:
-            raise Exception(f"Insert failed : {e}")
-
-    finally:
-        # ensure pool is torn down in all cases
-        engine.dispose()
+    # Call private DB utility
+    load_to_database(df)
 
 if __name__ == "__main__":
     try:
