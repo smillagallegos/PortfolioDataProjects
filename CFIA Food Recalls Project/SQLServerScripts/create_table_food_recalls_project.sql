@@ -1,6 +1,6 @@
 /* 
-    Script: create_table_FoodRecalls.sql
-    Purpose: Creates the FoodRecalls table in the CFIA_Recalls database if it does not exist.
+    Script: create_table_food_recalls_project.sql
+    Purpose: Creates the table in the database if it doesn't exist.
     Author: Salma Milla
     Date: 2025-05-10
     Description:
@@ -9,17 +9,17 @@
         - Designed for ingestion from the cleaned CFIA data pipeline.
 */
 
-USE CFIA_Recalls;
+USE [Food_Recalls_DB];
 GO
 
 -- Create table if it does not already exist
 IF NOT EXISTS (
 	SELECT *
 	FROM sys.tables
-	WHERE name = 'FoodRecalls' AND type = 'U'
+	WHERE name = [Food_Recalls_Table] AND type = 'U'
 )
 BEGIN
-	CREATE TABLE dbo.FoodRecalls (
+	CREATE TABLE dbo.[Food_Recalls_Table] (
 		ID INT IDENTITY(1,1) PRIMARY KEY,
 		NID INT NOT NULL,
 		Title VARCHAR (500) NOT NULL,
@@ -33,12 +33,10 @@ BEGIN
 		Class VARCHAR(10) NOT NULL,
 		LastUpdated DATE NOT NULL,
 		IsArchived BIT DEFAULT 0 NOT NULL,
-		CreatedAt DATETIME DEFAULT GETDATE(),
-
-		CONSTRAINT UQ_FoodRecalls_NID UNIQUE (NID),
+		CreatedAt DATETIME DEFAULT GETDATE()
 )
 END
 GO
 
 -- Get db content
-SELECT * FROM dbo.FoodRecalls;
+SELECT * FROM dbo.[Food_Recalls_Table];

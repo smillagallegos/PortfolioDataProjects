@@ -1,6 +1,6 @@
 /*
-    Script: create_database_CFIA_Recalls.sql
-    Purpose: Checks for and creates the CFIA_Recalls database if it doesn't already exist.
+    Script: create_database_food_recalls_project.sql
+    Purpose: Checks for and creates the database if it doesn't already exist.
     Author: Salma Milla
     Date: 2025-05-10
     Description:
@@ -13,11 +13,11 @@
 IF NOT EXISTS (
 	SELECT name 
 	FROM sys.databases 
-	WHERE name = N'CFIA_Recalls'
+	WHERE name = N'[Food_Recalls_DB]'
 )
 BEGIN
 	-- Create the database if it doesn't exist
-	CREATE DATABASE CFIA_Recalls;
+	CREATE DATABASE [Food_Recalls_DB];
 	PRINT 'Database created.';
 END
 ELSE
