@@ -76,7 +76,14 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
 
-      # Step 6: Run the pipeline
+      # Step 6: Restore private db_utils.py
+      - name: Restore db_utils.py
+        run: |
+          mkdir -p cfia_private_utils
+          echo "${{ secrets.DB_UTILS_BASE64 }}" | base64 --decode > cfia_private_utils/db_utils.py
+
+
+      # Step 7: Run the pipeline
       - name: Run pipeline
         env:
           CFIA_SQL_SERVER:   ${{ secrets.CFIA_SQL_SERVER }}
@@ -86,13 +93,18 @@ jobs:
         run: poetry run python cfia_run_pipeline.py
         continue-on-error: false
 
-      # Step 7: Check if the processed file was updated
+      # Step 8: Delete private files
+      - name: Cleanup private files
+        if: always()
+        run: rm -rf cfia_private_utils
+
+      # Step 9: Check if the processed file was updated
       - name: Show first lines of processed file (debug)
         run: |
           echo "Dumping head of processed file:"
           head -n 3 "recalls/processed_cfia_food_recalls.csv"
 
-      # Step 8: Commit the updated CSV back to repo
+      # Step 10: Commit the updated CSV back to repo
       - name: Commit updated CSV
         uses: EndBug/add-and-commit@v9
         with:
@@ -101,7 +113,7 @@ jobs:
           message: Commit recall files generated from the latest workflow
           default_author: github_actions
 
-      # Step 9: Get Client Credentials
+      # Step 11: Get Client Credentials
       - name: Get AAD token (client credentials)
         id: token
         run: |
@@ -114,7 +126,7 @@ jobs:
             "https://login.microsoftonline.com/${{ secrets.POWERBI_TENANT_ID }}/oauth2/v2.0/token")
           echo "token=$(echo "$resp" | jq -r .access_token)" >> $GITHUB_OUTPUT
 
-      # Step 10: Refresh PBI Dashboard
+      # Step 12: Refresh PBI Dashboard
       - name: Trigger dataset refresh
         id: refresh
         run: |
@@ -129,13 +141,13 @@ jobs:
             exit 1
           fi
 
-      # Step 11: Show dashboard link
+      # Step 13: Show dashboard link
       - name: Print dashboard link
         run: |
           echo "Dashboard refreshed! Open it here:"
           echo "https://app.powerbi.com/view?r=eyJrIjoiMzc1MDlhNmEtNzliNi00ZDA4LWI1NWEtZjFlZGFhZTU0ZDMxIiwidCI6ImVmNTJhMmE2LTk1OGUtNDQ2ZC05N2Y1LTc3NmI5NGI4YTBjYyJ9"
       
-      # Step 12: Close firewall rule
+      # Step 14: Close firewall rule
       - name: Close firewall
         if: always()
         run: |
