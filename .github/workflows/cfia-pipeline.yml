@@ -81,7 +81,8 @@ jobs:
         run: |
           mkdir -p cfia_private_utils
           echo "${{ secrets.DB_UTILS_BASE64 }}" | base64 --decode > cfia_private_utils/db_utils.py
-
+          echo "${{ secrets.EXTRACT_UTILS_BASE64 }}" | base64 --decode > cfia_private_utils/extract_utils.py
+          echo "${{ secrets.TRANSFORM_UTILS_BASE64 }}" | base64 --decode > cfia_private_utils/transform_utils.py
 
       # Step 7: Run the pipeline
       - name: Run pipeline
@@ -108,7 +109,7 @@ jobs:
       - name: Commit updated CSV
         uses: EndBug/add-and-commit@v9
         with:
-          add: '["recalls/cfia_recalls_raw.csv", "recalls/cfia_food_recalls.csv", "recalls/processed_cfia_food_recalls.csv"]'
+          add: "recalls/cfia_recalls_raw.csv"
           cwd: "./CFIA Food Recalls Project"
           message: Commit recall files generated from the latest workflow
           default_author: github_actions
