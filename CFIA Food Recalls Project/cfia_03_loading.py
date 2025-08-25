@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 
 # Add private folder to sys.path
-sys.path.append(str(Path(__file__).resolve().parent.parent / "cfia_private_utils"))
+sys.path.append(str(Path(__file__).resolve().parent / "cfia_private_utils"))
 
 # Import private DB functions
 from db_utils import load_to_database
