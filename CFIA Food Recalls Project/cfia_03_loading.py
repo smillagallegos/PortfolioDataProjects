@@ -1,3 +1,28 @@
+"""
+cfia_03_loading.py
+
+Handles the loading step of the CFIA ETL pipeline.
+
+This script:
+    1. Loads the processed dataset created in the transformation step.
+    2. Connects to the target Azure SQL database (MSSQL).
+    3. Checks for duplicate records by comparing with existing NIDs in the database.
+    4. Inserts only new records into the database.
+    5. Ensures database connection reliability with retry logic.
+
+Usage:
+    poetry run python cfia_03_loading.py
+
+Inputs:
+    - processed_cfia_food_recalls.csv (cleaned and enriched dataset)
+
+Outputs:
+    - New records appended to the FoodRecalls table in Azure SQL Database.
+
+Author: Salma Milla Gallegos
+Date: 2025-06-11
+"""
+
 import pandas as pd
 from pathlib import Path
 import sys

@@ -1,3 +1,29 @@
+"""
+cfia_01_extracting.py
+
+Handles the extraction step of the CFIA ETL pipeline.
+
+This script:
+    1. Downloads the raw CFIA recall dataset (CSV format) from the official CFIA Open Data portal.
+    2. Saves the raw dataset locally, including a timestamp of the pipeline run.
+    3. Filters the recalls to keep only food-related bacterial issues 
+       (e.g., Salmonella, Listeria, E. Coli).
+    4. Saves the filtered dataset as an intermediate CSV for downstream processing.
+
+Usage:
+    poetry run python cfia_01_extracting.py
+
+Inputs:
+    - Raw CFIA CSV (fetched directly from the CFIA Open Data API).
+
+Outputs:
+    - cfia_recalls_raw.csv
+    - cfia_food_recalls.csv (filtered dataset)
+
+Author: Salma Milla Gallegos
+Date: 2025-06-11
+"""
+
 import os
 import sys
 from pathlib import Path

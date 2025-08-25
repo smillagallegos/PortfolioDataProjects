@@ -1,3 +1,30 @@
+"""
+cfia_02_transforming.py
+
+Handles the transformation step of the CFIA ETL pipeline.
+
+This script:
+    1. Loads the filtered dataset created by the extraction step.
+    2. Cleans the dataset (removes duplicates, handles missing values, standardizes columns).
+    3. Enriches the dataset:
+        - Extracts product names from recall titles.
+        - Normalizes issue descriptions into main issue, secondary issue, and subtype.
+        - Standardizes recall class values.
+    4. Saves the processed dataset for loading into the database.
+
+Usage:
+    poetry run python cfia_02_transforming.py
+
+Inputs:
+    - cfia_food_recalls.csv (filtered dataset)
+
+Outputs:
+    - processed_cfia_food_recalls.csv (fully cleaned and enriched dataset)
+
+Author: Salma Milla Gallegos
+Date: 2025-06-11
+"""
+
 from pathlib import Path
 import sys
 

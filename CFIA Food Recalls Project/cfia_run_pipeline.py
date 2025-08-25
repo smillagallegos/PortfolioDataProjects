@@ -14,7 +14,7 @@ Usage:
 Each step is executed as a separate script using subprocess for modularity and maintainability.
 
 Author: Salma Milla Gallegos
-Date: 11/06/2025
+Date: 2025-06-11
 """
 
 import subprocess
