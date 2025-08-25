@@ -77,7 +77,7 @@ jobs:
         run: poetry install --no-interaction --no-root
 
       # Step 6: Restore private db_utils.py
-      - name: Restore db_utils.py
+      - name: Restore private utilities
         run: |
           mkdir -p cfia_private_utils
           echo "${{ secrets.DB_UTILS_BASE64 }}" | base64 --decode > cfia_private_utils/db_utils.py
