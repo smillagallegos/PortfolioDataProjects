@@ -1,204 +1,15 @@
-import pandas as pd
 from pathlib import Path
-import traceback
-import numpy as np
-import re
-from datetime import datetime
-import pytz
 import sys
 
-def load_recall_data(recalls_file_path: Path) -> pd.DataFrame:
-    """
-    Load the recall data from the given file path.
+# Add private folder to sys.path
+sys.path.append(str(Path(__file__).resolve().parent / "cfia_private_utils"))
 
-    Args:
-        recalls_file_path (Path): The full path to the recall CSV file.
-
-    Returns:
-        pd.DataFrame: A DataFrame with the loaded data, or empty if file not found.
-    """
-    # Check if the file exists and read it
-    if not recalls_file_path.exists():
-        raise Exception(f"File {recalls_file_path.name} does not exist.")
-
-    print(f"Successfully read {recalls_file_path.name}")
-    df = pd.read_csv(recalls_file_path, skiprows=1)
-
-    # Show a preview of the data
-    print(f"Dataframe\n{df.head(10)}")
-    
-    # Validate the structure of the DataFrame
-    required_columns = ['NID', 'Title', 'URL', 'Product', 'Issue', 'Category', 'Recall class', 'Last updated', 'Archived']
-    missing_columns = [col for col in required_columns if col not in df.columns]
-    if missing_columns:
-        raise Exception(f"Filtered file is missing required columns: {missing_columns}")
-
-    return df
-
-def clean_recalls_data(df_recalls: pd.DataFrame) -> pd.DataFrame:
-    """
-    Clean the recall data by removing duplicates and rows with missing values.
-
-    Args:
-        df_recalls (pd.DataFrame): Raw DataFrame to be cleaned.
-
-    Returns:
-        pd.DataFrame: Cleaned DataFrame with no duplicates or NA values.
-    """
-    # Check initial shape
-    initial_shape = df_recalls.shape
-
-    # Get all duplicated values in the data frame
-    duplicates = df_recalls[df_recalls.duplicated(keep=False)]
-    print(f"\nTotal duplicated values: {duplicates.shape}")
-
-    # Drop duplicates 
-    df_recalls_clean = df_recalls.drop_duplicates()
-
-    # Get all NA values in the data frame
-    total_nas = df_recalls_clean.isna().sum()
-    print(f"\nTotal missing values:\n{total_nas}")
-
-    # Drop null values in 'Recall class' column
-    df_recalls_clean = df_recalls_clean.dropna(subset=["Recall class"])
-
-    # Drop columns where 'Recall class' column contains '--' since this is a key feature for future analysis
-    df_recalls_clean = df_recalls_clean[df_recalls_clean['Recall class'] != '--']
-
-    print(f"\nCleaned data: {initial_shape} → {df_recalls_clean.shape}")
-    return df_recalls_clean
-
-def extract_product_name(title):
-    """
-    Extracts the product name from the given title.
-    
-    This function attempts to capture the product name by using regular expressions.
-
-    Args:
-        title (str): The title of the recall item that contains the product name.
-
-    Returns:
-        str: The extracted product name, or None if no product name could be found.
-    """
-    match = re.search(r"\bin (.*)", title, re.IGNORECASE)
-    if match:
-        return match.group(1).strip()
-        
-    triggers = [
-        r"recalled due to",
-        r"recalled",
-        r"may contain",
-        r"may be contaminated with",
-        r"due to",
-        r"possible contamination with",
-        r"possible presence of",
-        r"may be unsafe"
-    ]
-    pattern = r"^(.*?)\s*(?=(" + "|".join(triggers) + r"))"
-    match = re.search(pattern, title, re.IGNORECASE)
-    if match:
-        return match.group(1).strip()
-    return None
-
-def process_recalls_columns(df_recalls: pd.DataFrame) -> pd.DataFrame:
-    """
-    Convert data columns to a different data type and fill NA values.
-
-    Args:
-        df_recalls (pd.DataFrame): Raw DataFrame to be processed.
-
-    Returns:
-        pd.DataFrame: Updated DataFrame with modified columns.
-    """
-    # 'Recall class' contains 'Class 1 - Class 2' values that will be split into 2 different rows
-    df_recalls['Recall class'] = df_recalls['Recall class'].str.split(' - ')
-
-    # Explode the list into separate rows
-    df_recalls = df_recalls.explode('Recall class', ignore_index=True)
-
-    # Map 'Recall class' column values to numbers and convert this column to numeric type
-    df_recalls['Recall class'] = df_recalls['Recall class'].replace('Type II', 'Class 2').astype(str)
-
-    # Replace "E. Coli O157:H7" with "E. Coli - O157:H7" to standardize it for parse_issue function
-    df_recalls['Issue'] = df_recalls['Issue'].replace('E. Coli O157:H7', 'E. Coli - O157:H7')
-
-    # Convert 'Archived' column to numeric type
-    df_recalls['Archived'] = df_recalls['Archived'].astype(int)
-
-    # Apply the function only to rows where 'Product' is NaN
-    # This will ensure that only the missing product names are populated
-    df_recalls.loc[df_recalls['Product'].isna(), 'Product'] = df_recalls.loc[df_recalls['Product'].isna(), 'Title'].apply(extract_product_name)
-
-    # Display the updated DataFrame with titles and their corresponding product names
-    print(df_recalls[['Title', 'Product']])
-
-    return df_recalls
-
-def parse_issue(issue):
-    """
-    Parses the recall issue string and extracts the main issue, any secondary issue or hazard, 
-    and the subtype (if applicable).
-
-    The function splits the issue string by ' - ' and applies special logic for certain cases:
-        - If the main issue is 'Listeria' and the secondary part is 'Food', the record is treated as 'Listeria' only, with no secondary issue.
-        - For 'E. Coli', the first part after the dash is treated as the subtype, and if a third part exists, it is treated as a secondary issue/hazard.
-        - For all other cases with a dash, the second part is treated as the secondary issue or hazard.
-
-    Args:
-        issue (str): The issue description from the recall data.
-
-    Returns:
-        pd.Series: A Pandas Series with three elements:
-            - main_issue (str): The primary bacteria or hazard detected (e.g., 'Salmonella', 'Listeria', 'E. Coli').
-            - secondary_issue (str): Any additional hazard or bacteria present (blank if none or for 'Listeria - Food').
-            - subtype (str): The subtype/serotype for 'E. Coli' if present, otherwise blank.
-    """
-    # Split by dash, remove leading/trailing whitespace
-    parts = [part.strip() for part in issue.split(' - ')]
-    main_issue = parts[0]
-    subtype = ''
-    secondary_issue = ''
-
-    if len(parts) > 1:
-        # If a second part exists and contains the word "Food", skip it
-        if main_issue.lower() == 'listeria' and parts[1].lower() == 'food':
-            pass
-        elif main_issue.lower().startswith('e. coli'):
-            # If a second part exists and the main issue is "E.Coli" it's a bacteria subtype
-            subtype = parts[1]
-            # If a third part exists and the main issue is "E.Coli", it's a second issue
-            if len(parts) > 2:
-                secondary_issue = parts[2]
-        else:
-            secondary_issue = parts[1]
-        
-    return pd.Series([main_issue, secondary_issue, subtype])
-
-def save_processed_data (processed_file_path: Path, df_recalls_processed: pd.DataFrame):
-    """
-    Save the processed recall data to a CSV file.
-
-    This function takes a DataFrame containing processed recall data and saves it 
-    to a specified file path including a timestamp comment in the first line to keep track of the last time it was updated.
-    The file is saved without including the index.
-
-    Args:
-        processed_file_path (Path): The full path where the processed data should be saved.
-        df_recalls_processed (pd.DataFrame): The DataFrame containing the processed recall data.
-
-    Returns:
-        None: This function saves the file to the disk and prints a success message.
-    """
-
-    # Generate ET timestamp
-    timestamp_et = datetime.now(pytz.timezone("America/Toronto")).strftime("%Y-%m-%d %H:%M:%S %Z")
-
-    # Open the file and write comment + updated data
-    with open(processed_file_path, "w", encoding="utf-8") as f:
-        f.write(f"# Last workflow run on (ET): {timestamp_et}\n")
-        df_recalls_processed.to_csv(f, index=False, encoding="utf-8")
-
-    print(f"\nData successfully saved to {processed_file_path.name}")
+# Import private transformation functions
+from transform_utils import (
+    load_recall_data, clean_recalls_data,
+    process_recalls_columns, parse_issue,
+    save_processed_data
+)
 
 def main():
     """
@@ -206,18 +17,16 @@ def main():
     """
     # Convert string into Path object
     dir_path = Path("recalls")
+    # Get full path to read the file
+    recalls_file_path = dir_path / "cfia_food_recalls.csv"
+    processed_file_path = dir_path / "processed_cfia_food_recalls.csv"
 
     # Check if the directory exists
     if not dir_path.exists() or not dir_path.is_dir():
         raise Exception(f"Directory {dir_path.name} does not exist.")
 
-    # Get full path to read the file
-    recalls_file_path = dir_path / "cfia_food_recalls.csv"
-    processed_file_path = dir_path / "processed_cfia_food_recalls.csv"
-
     # Call the function to get recalls data frame
     df_recalls = load_recall_data(recalls_file_path)
-
     if df_recalls.empty:
         raise Exception(f"Data frame {filename} not found")
 
